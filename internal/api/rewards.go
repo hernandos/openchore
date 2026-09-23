@@ -247,6 +247,38 @@ func (h *RewardHandler) ListRedemptions(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, redemptions)
 }
 
+func (h *RewardHandler) ListAllRedemptions(w http.ResponseWriter, r *http.Request) {
+	redemptions, err := h.store.ListAllRedemptions(r.Context(), 100)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to list redemptions")
+		return
+	}
+	if redemptions == nil {
+		redemptions = []store.RedemptionHistoryRow{}
+	}
+	writeJSON(w, http.StatusOK, redemptions)
+}
+
+func (h *RewardHandler) UpdateRedemptionStatus(w http.ResponseWriter, r *http.Request) {
+	id, err := urlParamInt64(r, "redemptionID")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid redemption id")
+		return
+	}
+	var req struct {
+		Status string `json:"status"`
+	}
+	if err := decodeJSON(r, &req); err != nil || (req.Status != "pending" && req.Status != "paid") {
+		writeError(w, http.StatusBadRequest, "status must be pending or paid")
+		return
+	}
+	if err := h.store.UpdateRedemptionStatus(r.Context(), id, req.Status); err != nil {
+		writeError(w, http.StatusNotFound, "redemption not found")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // --- Commitments ---
 
 func (h *RewardHandler) ListCommitments(w http.ResponseWriter, r *http.Request) {

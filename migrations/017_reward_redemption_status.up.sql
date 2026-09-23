@@ -1,0 +1,1 @@
+ALTER TABLE reward_redemptions ADD COLUMN status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid'));

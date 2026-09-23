@@ -1444,6 +1444,7 @@ func (s *Store) RedeemReward(ctx context.Context, userID, rewardID int64) (*mode
 		RewardID:    rewardID,
 		UserID:      userID,
 		PointsSpent: cost,
+		Status:      "pending",
 	}, nil
 }
 
@@ -1566,6 +1567,7 @@ func (s *Store) redeemSharedPoolTx(ctx context.Context, tx *sql.Tx, userID, rewa
 				RewardID:    rewardID,
 				UserID:      userID,
 				PointsSpent: c.saved,
+				Status:      "pending",
 			}
 		}
 	}
@@ -1590,6 +1592,7 @@ func (s *Store) redeemSharedPoolTx(ctx context.Context, tx *sql.Tx, userID, rewa
 			RewardID:    rewardID,
 			UserID:      userID,
 			PointsSpent: 0,
+			Status:      "pending",
 		}
 	}
 	return callerRedemption, nil
@@ -2422,15 +2425,18 @@ func (s *Store) DeleteStreakReward(ctx context.Context, id int64) error {
 
 type RedemptionHistoryRow struct {
 	ID          int64     `json:"id"`
+	UserID      int64     `json:"user_id,omitempty"`
+	UserName    string    `json:"user_name,omitempty"`
 	RewardName  string    `json:"reward_name"`
 	RewardIcon  string    `json:"reward_icon"`
 	PointsSpent int       `json:"points_spent"`
+	Status      string    `json:"status"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 
 func (s *Store) ListRedemptionsForUser(ctx context.Context, userID int64, limit int) ([]RedemptionHistoryRow, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT rr.id, r.name, r.icon, rr.points_spent, rr.created_at
+		SELECT rr.id, r.name, r.icon, rr.points_spent, rr.status, rr.created_at
 		FROM reward_redemptions rr
 		JOIN rewards r ON r.id = rr.reward_id
 		WHERE rr.user_id = ?
@@ -2443,12 +2449,51 @@ func (s *Store) ListRedemptionsForUser(ctx context.Context, userID int64, limit 
 	var result []RedemptionHistoryRow
 	for rows.Next() {
 		var r RedemptionHistoryRow
-		if err := rows.Scan(&r.ID, &r.RewardName, &r.RewardIcon, &r.PointsSpent, &r.CreatedAt); err != nil {
+		if err := rows.Scan(&r.ID, &r.RewardName, &r.RewardIcon, &r.PointsSpent, &r.Status, &r.CreatedAt); err != nil {
 			return nil, err
 		}
 		result = append(result, r)
 	}
 	return result, rows.Err()
+}
+
+func (s *Store) ListAllRedemptions(ctx context.Context, limit int) ([]RedemptionHistoryRow, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT rr.id, rr.user_id, u.name, r.name, r.icon, rr.points_spent, rr.status, rr.created_at
+		FROM reward_redemptions rr
+		JOIN rewards r ON r.id = rr.reward_id
+		JOIN users u ON u.id = rr.user_id
+		ORDER BY rr.created_at DESC
+		LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []RedemptionHistoryRow
+	for rows.Next() {
+		var redemption RedemptionHistoryRow
+		if err := rows.Scan(&redemption.ID, &redemption.UserID, &redemption.UserName, &redemption.RewardName, &redemption.RewardIcon, &redemption.PointsSpent, &redemption.Status, &redemption.CreatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, redemption)
+	}
+	return result, rows.Err()
+}
+
+func (s *Store) UpdateRedemptionStatus(ctx context.Context, redemptionID int64, status string) error {
+	result, err := s.db.ExecContext(ctx,
+		`UPDATE reward_redemptions SET status = ? WHERE id = ?`, status, redemptionID)
+	if err != nil {
+		return err
+	}
+	updated, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if updated == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 func (s *Store) UndoRedemption(ctx context.Context, redemptionID int64) error {

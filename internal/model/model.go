@@ -179,6 +179,7 @@ type RewardRedemption struct {
 	RewardID    int64     `json:"reward_id"`
 	UserID      int64     `json:"user_id"`
 	PointsSpent int       `json:"points_spent"`
+	Status      string    `json:"status"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 

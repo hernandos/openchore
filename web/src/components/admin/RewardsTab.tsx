@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api';
-import type { User, Reward, StreakRewardItem } from '../../types';
+import type { User, Reward, RedemptionHistory, StreakRewardItem } from '../../types';
 import styles from '../../pages/AdminDashboard.module.css';
 import { Plus, Trash2, Edit2, X, Save, Users, Star, ChevronDown, ChevronUp, Flame } from 'lucide-react';
 import clsx from 'clsx';
@@ -255,16 +255,18 @@ export const RewardsTab: React.FC = () => {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [streakRewards, setStreakRewards] = useState<StreakRewardItem[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [redemptions, setRedemptions] = useState<RedemptionHistory[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
   const [showStreakForm, setShowStreakForm] = useState(false);
   const [expandedAssignments, setExpandedAssignments] = useState<number | null>(null);
 
   const load = useCallback(async () => {
-    const [r, sr, u] = await Promise.all([api.rewards.listAll(), api.streaks.listRewards(), api.users.list()]);
+    const [r, sr, u, rr] = await Promise.all([api.rewards.listAll(), api.streaks.listRewards(), api.users.list(), api.rewards.listAllRedemptions()]);
     setRewards(r);
     setStreakRewards(sr);
     setUsers(u.filter((u: User) => u.role === 'child'));
+    setRedemptions(rr);
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -277,6 +279,12 @@ export const RewardsTab: React.FC = () => {
   const handleDeleteStreakReward = async (id: number) => {
     await api.streaks.deleteReward(id);
     load();
+  };
+
+  const handleRedemptionStatus = async (redemption: RedemptionHistory) => {
+    const status = redemption.status === 'paid' ? 'pending' : 'paid';
+    await api.rewards.updateRedemptionStatus(redemption.id, status);
+    setRedemptions(current => current.map(item => item.id === redemption.id ? { ...item, status } : item));
   };
 
   const toggleAssignments = (id: number) => {
@@ -338,6 +346,36 @@ export const RewardsTab: React.FC = () => {
             {expandedAssignments === r.id && (
               <RewardAssignmentEditor reward={r} users={users} onSave={load} />
             )}
+          </div>
+        ))}
+      </div>
+
+      <div className={styles.sectionHeader} style={{ marginTop: '2rem' }}>
+        <h2 className={styles.sectionTitle}>{t('admin.rewardsTab.redemptionsTitle')}</h2>
+      </div>
+      <div className={styles.list}>
+        {redemptions.length === 0 && <p className={styles.emptyText}>{t('admin.rewardsTab.noRedemptions')}</p>}
+        {redemptions.map(redemption => (
+          <div key={redemption.id} className={styles.listItem}>
+            <div className={styles.listItemMain}>
+              <span className={styles.rewardIconLg}>{redemption.reward_icon || '🎁'}</span>
+              <div className={styles.listItemInfo}>
+                <h3 className={styles.listItemTitle}>{redemption.reward_name}</h3>
+                <div className={styles.listItemMeta}>
+                  <span>{redemption.user_name}</span>
+                  <span><Star size={12} /> {redemption.points_spent} {t('admin.rewardsTab.pts')}</span>
+                  <span>{new Date(redemption.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+              <div className={styles.listItemActions}>
+                <span className={redemption.status === 'paid' ? styles.statusActive : styles.statusInactive}>
+                  {redemption.status === 'paid' ? t('admin.rewardsTab.paid') : t('admin.rewardsTab.pending')}
+                </span>
+                <button className={styles.btnSmall} onClick={() => handleRedemptionStatus(redemption)}>
+                  {redemption.status === 'paid' ? t('admin.rewardsTab.markPending') : t('admin.rewardsTab.markPaid')}
+                </button>
+              </div>
+            </div>
           </div>
         ))}
       </div>

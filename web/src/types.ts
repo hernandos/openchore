@@ -407,9 +407,12 @@ export interface UserDecayConfig {
 
 export interface RedemptionHistory {
   id: number;
+  user_id?: number;
+  user_name?: string;
   reward_name: string;
   reward_icon: string;
   points_spent: number;
+  status: 'pending' | 'paid';
   created_at: string;
 }
 
