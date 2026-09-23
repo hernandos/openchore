@@ -637,6 +637,7 @@
       "listenToFeedback": "Listen to feedback",
       "markComplete": "Mark complete",
       "markIncomplete": "Mark incomplete",
+      "penalty": "Penalty: -{{value}} pts",
       "pts": "pts",
       "ptsPending": "pts pending",
       "readAloud": "Read {{title}} aloud",

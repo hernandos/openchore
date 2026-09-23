@@ -637,6 +637,7 @@
       "listenToFeedback": "Feedback anhören",
       "markComplete": "Als erledigt markieren",
       "markIncomplete": "Als nicht erledigt markieren",
+      "penalty": "Abzug: -{{value}} Pkt.",
       "pts": "Pkt.",
       "ptsPending": "Pkt. ausstehend",
       "readAloud": "{{title}} vorlesen",

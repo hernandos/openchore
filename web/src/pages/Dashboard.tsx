@@ -755,6 +755,11 @@ export const Dashboard: React.FC = () => {
                 <><Star size={14} /> {chore.points_value} {t('dashboard.chore.pts')}</>
               )}
             </span>
+            {chore.missed_penalty_value > 0 && (
+              <span className={styles.metaItem}>
+                {t('dashboard.chore.penalty', { value: chore.missed_penalty_value })}
+              </span>
+            )}
             {isExpired && chore.due_by && (
               <span className={styles.expiredBadge}>
                 {chore.expiry_penalty === 'block'
