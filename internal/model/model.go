@@ -97,28 +97,28 @@ type Chore struct {
 }
 
 type ChoreSchedule struct {
-	ID               int64    `json:"id"`
-	ChoreID          int64    `json:"chore_id"`
-	AssignedTo       int64    `json:"assigned_to"`
-	AssignmentType   string   `json:"assignment_type"`
-	FcfsGroupID      *string  `json:"fcfs_group_id,omitempty"`
-	DayOfWeek        *int     `json:"day_of_week,omitempty"`
-	SpecificDate     *string  `json:"specific_date,omitempty"`
-	AvailableAt      *string  `json:"available_at,omitempty"`
-	PointsMultiplier    float64  `json:"points_multiplier"`
-	StartDate           *string  `json:"start_date,omitempty"`
-	EndDate             *string  `json:"end_date,omitempty"`
-	RecurrenceInterval  *int     `json:"recurrence_interval,omitempty"`
-	RecurrenceStart     *string  `json:"recurrence_start,omitempty"`
-	DueBy               *string  `json:"due_by,omitempty"`
-	ExpiryPenalty       string   `json:"expiry_penalty"`
-	ExpiryPenaltyValue  int      `json:"expiry_penalty_value"`
-	CreatedAt           string   `json:"created_at"`
+	ID                 int64   `json:"id"`
+	ChoreID            int64   `json:"chore_id"`
+	AssignedTo         int64   `json:"assigned_to"`
+	AssignmentType     string  `json:"assignment_type"`
+	FcfsGroupID        *string `json:"fcfs_group_id,omitempty"`
+	DayOfWeek          *int    `json:"day_of_week,omitempty"`
+	SpecificDate       *string `json:"specific_date,omitempty"`
+	AvailableAt        *string `json:"available_at,omitempty"`
+	PointsMultiplier   float64 `json:"points_multiplier"`
+	StartDate          *string `json:"start_date,omitempty"`
+	EndDate            *string `json:"end_date,omitempty"`
+	RecurrenceInterval *int    `json:"recurrence_interval,omitempty"`
+	RecurrenceStart    *string `json:"recurrence_start,omitempty"`
+	DueBy              *string `json:"due_by,omitempty"`
+	ExpiryPenalty      string  `json:"expiry_penalty"`
+	ExpiryPenaltyValue int     `json:"expiry_penalty_value"`
+	CreatedAt          string  `json:"created_at"`
 }
 
 type ChoreCompletion struct {
 	ID              int64      `json:"id"`
-	ChoreScheduleID int64     `json:"chore_schedule_id"`
+	ChoreScheduleID int64      `json:"chore_schedule_id"`
 	CompletedBy     int64      `json:"completed_by"`
 	Status          string     `json:"status"` // approved, pending, rejected, ai_rejected
 	PhotoURL        string     `json:"photo_url,omitempty"`
@@ -154,6 +154,8 @@ type Reward struct {
 	Name          string             `json:"name"`
 	Description   string             `json:"description"`
 	Icon          string             `json:"icon,omitempty"`
+	RewardURL     string             `json:"reward_url,omitempty"`
+	ImageURL      string             `json:"image_url,omitempty"`
 	Cost          int                `json:"cost"`
 	EffectiveCost int                `json:"effective_cost"` // per-user cost (may differ from base cost)
 	Stock         *int               `json:"stock,omitempty"`
@@ -330,25 +332,25 @@ type WebhookDelivery struct {
 
 // ScheduledChore is a denormalized view returned by the chores-for-user endpoint.
 type ScheduledChore struct {
-	ScheduleID       int64   `json:"schedule_id"`
-	ChoreID          int64   `json:"chore_id"`
-	Title            string  `json:"title"`
-	Description      string  `json:"description"`
-	Category         string  `json:"category"`
-	Icon             string  `json:"icon,omitempty"`
-	PointsValue      int     `json:"points_value"`
-	MissedPenaltyValue int    `json:"missed_penalty_value"`
-	EstimatedMinutes *int    `json:"estimated_minutes,omitempty"`
-	RequiresApproval bool    `json:"requires_approval"`
-	RequiresPhoto    bool    `json:"requires_photo"`
-	PhotoSource      string  `json:"photo_source"`
-	AssignmentType   string  `json:"assignment_type"`
-	AvailableAt      *string `json:"available_at,omitempty"`
-	DueBy              *string `json:"due_by,omitempty"`
-	ExpiryPenalty      string  `json:"expiry_penalty"`
-	ExpiryPenaltyValue int     `json:"expiry_penalty_value"`
-	Available          bool    `json:"available"`
-	Expired            bool    `json:"expired"`
+	ScheduleID         int64      `json:"schedule_id"`
+	ChoreID            int64      `json:"chore_id"`
+	Title              string     `json:"title"`
+	Description        string     `json:"description"`
+	Category           string     `json:"category"`
+	Icon               string     `json:"icon,omitempty"`
+	PointsValue        int        `json:"points_value"`
+	MissedPenaltyValue int        `json:"missed_penalty_value"`
+	EstimatedMinutes   *int       `json:"estimated_minutes,omitempty"`
+	RequiresApproval   bool       `json:"requires_approval"`
+	RequiresPhoto      bool       `json:"requires_photo"`
+	PhotoSource        string     `json:"photo_source"`
+	AssignmentType     string     `json:"assignment_type"`
+	AvailableAt        *string    `json:"available_at,omitempty"`
+	DueBy              *string    `json:"due_by,omitempty"`
+	ExpiryPenalty      string     `json:"expiry_penalty"`
+	ExpiryPenaltyValue int        `json:"expiry_penalty_value"`
+	Available          bool       `json:"available"`
+	Expired            bool       `json:"expired"`
 	Completed          bool       `json:"completed"`
 	CompletionID       *int64     `json:"completion_id,omitempty"`
 	CompletedAt        *time.Time `json:"completed_at,omitempty"`

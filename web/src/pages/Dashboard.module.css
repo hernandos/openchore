@@ -1493,6 +1493,19 @@
   border-radius: 12px;
 }
 
+.rewardImageLink {
+  display: block;
+  flex-shrink: 0;
+}
+
+.rewardImage {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .rewardInfo {
   flex: 1;
   min-width: 0;

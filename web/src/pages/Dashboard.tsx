@@ -1169,7 +1169,15 @@ export const Dashboard: React.FC = () => {
 
               return (
                 <div key={reward.id} className={clsx(styles.rewardCard, !redeemEnabled && !isCommittedReward && styles.rewardCardLocked)}>
-                  {reward.icon && <div className={styles.rewardIcon}>{reward.icon}</div>}
+                  {reward.image_url ? (
+                    reward.reward_url ? (
+                      <a className={styles.rewardImageLink} href={reward.reward_url} target="_blank" rel="noreferrer">
+                        <img className={styles.rewardImage} src={reward.image_url} alt={reward.name} />
+                      </a>
+                    ) : (
+                      <img className={styles.rewardImage} src={reward.image_url} alt={reward.name} />
+                    )
+                  ) : reward.icon ? <div className={styles.rewardIcon}>{reward.icon}</div> : null}
                   <div className={styles.rewardInfo}>
                     <h3 className={styles.rewardName}>
                       {reward.name}

@@ -99,6 +99,8 @@ const RewardForm: React.FC<{
   const [name, setName] = useState(reward?.name || '');
   const [description, setDescription] = useState(reward?.description || '');
   const [icon, setIcon] = useState(reward?.icon || '');
+  const [rewardUrl, setRewardUrl] = useState(reward?.reward_url || '');
+  const [imageUrl, setImageUrl] = useState(reward?.image_url || '');
   const [cost, setCost] = useState(reward?.cost?.toString() || '50');
   const [stock, setStock] = useState(reward?.stock?.toString() || '');
   const [shareable, setShareable] = useState(reward?.shareable ?? false);
@@ -112,6 +114,8 @@ const RewardForm: React.FC<{
         name,
         description,
         icon,
+        reward_url: rewardUrl || undefined,
+        image_url: imageUrl || undefined,
         cost: parseInt(cost) || 0,
         stock: stock ? parseInt(stock) : undefined,
         active: true,
@@ -151,6 +155,17 @@ const RewardForm: React.FC<{
         <div className={styles.formGroup}>
           <label className={styles.label}>{t('admin.rewardsTab.fieldDescription')}</label>
           <input className={styles.input} value={description} onChange={e => setDescription(e.target.value)} placeholder={t('admin.rewardsTab.fieldDescriptionPlaceholder')} />
+        </div>
+
+        <div className={styles.formRow}>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>{t('admin.rewardsTab.fieldRewardUrl')}</label>
+            <input className={styles.input} type="url" value={rewardUrl} onChange={e => setRewardUrl(e.target.value)} placeholder={t('admin.rewardsTab.fieldRewardUrlPlaceholder')} />
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>{t('admin.rewardsTab.fieldImageUrl')}</label>
+            <input className={styles.input} type="url" value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder={t('admin.rewardsTab.fieldImageUrlPlaceholder')} />
+          </div>
         </div>
 
         <div className={styles.formRow}>

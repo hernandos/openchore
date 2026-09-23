@@ -47,6 +47,8 @@ func (h *RewardHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Name        string `json:"name"`
 		Description string `json:"description"`
 		Icon        string `json:"icon"`
+		RewardURL   string `json:"reward_url"`
+		ImageURL    string `json:"image_url"`
 		Cost        int    `json:"cost"`
 		Stock       *int   `json:"stock"`
 		Shareable   bool   `json:"shareable"`
@@ -64,6 +66,8 @@ func (h *RewardHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Name:        req.Name,
 		Description: req.Description,
 		Icon:        req.Icon,
+		RewardURL:   req.RewardURL,
+		ImageURL:    req.ImageURL,
 		Cost:        req.Cost,
 		Stock:       req.Stock,
 		Active:      true,
@@ -92,6 +96,8 @@ func (h *RewardHandler) Update(w http.ResponseWriter, r *http.Request) {
 		Name        *string `json:"name"`
 		Description *string `json:"description"`
 		Icon        *string `json:"icon"`
+		RewardURL   *string `json:"reward_url"`
+		ImageURL    *string `json:"image_url"`
 		Cost        *int    `json:"cost"`
 		Stock       *int    `json:"stock"`
 		Active      *bool   `json:"active"`
@@ -109,6 +115,12 @@ func (h *RewardHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Icon != nil {
 		existing.Icon = *req.Icon
+	}
+	if req.RewardURL != nil {
+		existing.RewardURL = *req.RewardURL
+	}
+	if req.ImageURL != nil {
+		existing.ImageURL = *req.ImageURL
 	}
 	if req.Cost != nil {
 		existing.Cost = *req.Cost

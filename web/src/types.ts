@@ -293,6 +293,8 @@ export interface Reward {
   name: string;
   description: string;
   icon?: string;
+  reward_url?: string;
+  image_url?: string;
   cost: number;
   effective_cost: number;
   stock?: number;

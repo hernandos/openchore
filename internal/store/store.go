@@ -732,7 +732,6 @@ func (s *Store) ReverseAutoContributeReversals(ctx context.Context, completionID
 	return err
 }
 
-
 func (s *Store) GetSchedule(ctx context.Context, id int64) (*model.ChoreSchedule, error) {
 	cs := &model.ChoreSchedule{}
 	err := s.db.QueryRowContext(ctx,
@@ -776,9 +775,9 @@ func (s *Store) GetCompletion(ctx context.Context, id int64) (*model.ChoreComple
 }
 
 type PendingCompletionRow struct {
-	ID             int64     `json:"id"`
-	ChoreTitle     string    `json:"chore_title"`
-	ChildName      string    `json:"child_name"`
+	ID         int64  `json:"id"`
+	ChoreTitle string `json:"chore_title"`
+	ChildName  string `json:"child_name"`
 	// AssignedUserID is the user_id the underlying schedule is assigned to
 	// (i.e. the kid the chore "belongs to"), which may differ from the user
 	// who clicked "complete" (see ChildName) in sibling/FCFS scenarios.
@@ -1020,9 +1019,9 @@ func (s *Store) AdminAdjustPoints(ctx context.Context, userID int64, amount int,
 
 func (s *Store) CreateReward(ctx context.Context, r *model.Reward) error {
 	res, err := s.db.ExecContext(ctx,
-		`INSERT INTO rewards (name, description, icon, cost, stock, active, shareable, created_by)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		r.Name, r.Description, r.Icon, r.Cost, r.Stock, r.Active, boolToInt(r.Shareable), r.CreatedBy)
+		`INSERT INTO rewards (name, description, icon, reward_url, image_url, cost, stock, active, shareable, created_by)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		r.Name, r.Description, r.Icon, r.RewardURL, r.ImageURL, r.Cost, r.Stock, r.Active, boolToInt(r.Shareable), r.CreatedBy)
 	if err != nil {
 		return err
 	}
@@ -1034,9 +1033,9 @@ func (s *Store) GetReward(ctx context.Context, id int64) (*model.Reward, error) 
 	r := &model.Reward{}
 	var active, shareable int
 	err := s.db.QueryRowContext(ctx,
-		`SELECT id, name, description, icon, cost, stock, active, shareable, created_by, created_at
+		`SELECT id, name, description, icon, reward_url, image_url, cost, stock, active, shareable, created_by, created_at
 		 FROM rewards WHERE id = ?`, id).
-		Scan(&r.ID, &r.Name, &r.Description, &r.Icon, &r.Cost, &r.Stock, &active, &shareable, &r.CreatedBy, &r.CreatedAt)
+		Scan(&r.ID, &r.Name, &r.Description, &r.Icon, &r.RewardURL, &r.ImageURL, &r.Cost, &r.Stock, &active, &shareable, &r.CreatedBy, &r.CreatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -1046,7 +1045,7 @@ func (s *Store) GetReward(ctx context.Context, id int64) (*model.Reward, error) 
 }
 
 func (s *Store) ListRewards(ctx context.Context, activeOnly bool) ([]model.Reward, error) {
-	q := `SELECT id, name, description, icon, cost, stock, active, shareable, created_by, created_at FROM rewards`
+	q := `SELECT id, name, description, icon, reward_url, image_url, cost, stock, active, shareable, created_by, created_at FROM rewards`
 	if activeOnly {
 		q += ` WHERE active = 1`
 	}
@@ -1060,7 +1059,7 @@ func (s *Store) ListRewards(ctx context.Context, activeOnly bool) ([]model.Rewar
 	for rows.Next() {
 		var r model.Reward
 		var active, shareable int
-		if err := rows.Scan(&r.ID, &r.Name, &r.Description, &r.Icon, &r.Cost, &r.Stock, &active, &shareable, &r.CreatedBy, &r.CreatedAt); err != nil {
+		if err := rows.Scan(&r.ID, &r.Name, &r.Description, &r.Icon, &r.RewardURL, &r.ImageURL, &r.Cost, &r.Stock, &active, &shareable, &r.CreatedBy, &r.CreatedAt); err != nil {
 			return nil, err
 		}
 		r.Active = active == 1
@@ -1076,7 +1075,7 @@ func (s *Store) ListRewards(ctx context.Context, activeOnly bool) ([]model.Rewar
 // If it has assignments, only assigned users see it, with per-user cost.
 func (s *Store) ListRewardsForUser(ctx context.Context, userID int64) ([]model.Reward, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT r.id, r.name, r.description, r.icon, r.cost, r.stock, r.shareable, r.created_by, r.created_at,
+		SELECT r.id, r.name, r.description, r.icon, r.reward_url, r.image_url, r.cost, r.stock, r.shareable, r.created_by, r.created_at,
 			ra.custom_cost
 		FROM rewards r
 		LEFT JOIN reward_assignments ra ON ra.reward_id = r.id AND ra.user_id = ?
@@ -1097,7 +1096,7 @@ func (s *Store) ListRewardsForUser(ctx context.Context, userID int64) ([]model.R
 		var r model.Reward
 		var shareable int
 		var customCost sql.NullInt64
-		if err := rows.Scan(&r.ID, &r.Name, &r.Description, &r.Icon, &r.Cost, &r.Stock, &shareable, &r.CreatedBy, &r.CreatedAt, &customCost); err != nil {
+		if err := rows.Scan(&r.ID, &r.Name, &r.Description, &r.Icon, &r.RewardURL, &r.ImageURL, &r.Cost, &r.Stock, &shareable, &r.CreatedBy, &r.CreatedAt, &customCost); err != nil {
 			return nil, err
 		}
 		r.Active = true
@@ -1174,12 +1173,12 @@ func (s *Store) SetRewardAssignments(ctx context.Context, rewardID int64, assign
 
 // UpdateReward applies admin edits and, when the shareable flag transitions,
 // keeps existing kid commitments coherent:
-//   * shareable false → true: any active personal commits on this reward
+//   - shareable false → true: any active personal commits on this reward
 //     migrate into a new shared pool so siblings end up in the same pool
 //     instead of disconnected personal silos. Each kid's saved amount is
 //     preserved (it's derived from ledger rows referencing the commitment
 //     row, which we don't touch).
-//   * shareable true → false: refuse if there's an active shared pool with
+//   - shareable true → false: refuse if there's an active shared pool with
 //     contributors — the admin must redeem or cancel it first. Otherwise
 //     untying the pool from the reward leaves a half-state nobody can fix.
 func (s *Store) UpdateReward(ctx context.Context, r *model.Reward) error {
@@ -1198,8 +1197,8 @@ func (s *Store) UpdateReward(ctx context.Context, r *model.Reward) error {
 	priorlyShareable := priorShareable == 1
 
 	if _, err := tx.ExecContext(ctx,
-		`UPDATE rewards SET name=?, description=?, icon=?, cost=?, stock=?, active=?, shareable=? WHERE id=?`,
-		r.Name, r.Description, r.Icon, r.Cost, r.Stock, boolToInt(r.Active), boolToInt(r.Shareable), r.ID); err != nil {
+		`UPDATE rewards SET name=?, description=?, icon=?, reward_url=?, image_url=?, cost=?, stock=?, active=?, shareable=? WHERE id=?`,
+		r.Name, r.Description, r.Icon, r.RewardURL, r.ImageURL, r.Cost, r.Stock, boolToInt(r.Active), boolToInt(r.Shareable), r.ID); err != nil {
 		return err
 	}
 
