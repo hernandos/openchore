@@ -106,6 +106,7 @@ export const ActivityTab: React.FC = () => {
                 <span className={styles.activityUser}>{getUserName(txn.user_id)}</span>
                 <span className={styles.activityReason}>{getReasonLabel(txn.reason)}</span>
               </div>
+              {txn.chore_name && <div className={styles.activityChore}>{t('admin.activityTab.chore', { name: txn.chore_name })}</div>}
               {txn.note && <div className={styles.activityNote}>{txn.note}</div>}
               <div className={styles.activityTime}>{formatTime(txn.created_at)}</div>
             </div>

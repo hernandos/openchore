@@ -978,8 +978,12 @@ func (s *Store) GetAllPointBalances(ctx context.Context) ([]PointBalanceRow, err
 
 func (s *Store) ListPointTransactions(ctx context.Context, userID int64, limit int) ([]model.PointTransaction, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, user_id, amount, reason, reference_id, note, idempotency_key, created_at
-		 FROM point_transactions WHERE user_id = ? ORDER BY id DESC LIMIT ?`, userID, limit)
+		`SELECT pt.id, pt.user_id, pt.amount, pt.reason, pt.reference_id, c.title, pt.note, pt.idempotency_key, pt.created_at
+		 FROM point_transactions pt
+		 LEFT JOIN chore_completions cc ON cc.id = pt.reference_id
+		 LEFT JOIN chore_schedules cs ON cs.id = CASE WHEN pt.reason = 'missed_chore' THEN pt.reference_id ELSE cc.chore_schedule_id END
+		 LEFT JOIN chores c ON c.id = cs.chore_id
+		 WHERE pt.user_id = ? ORDER BY pt.id DESC LIMIT ?`, userID, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -987,9 +991,14 @@ func (s *Store) ListPointTransactions(ctx context.Context, userID int64, limit i
 	var txs []model.PointTransaction
 	for rows.Next() {
 		var t model.PointTransaction
+		var choreName sql.NullString
 		var idempotencyKey sql.NullString
-		if err := rows.Scan(&t.ID, &t.UserID, &t.Amount, &t.Reason, &t.ReferenceID, &t.Note, &idempotencyKey, &t.CreatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Amount, &t.Reason, &t.ReferenceID, &choreName, &t.Note, &idempotencyKey, &t.CreatedAt); err != nil {
 			return nil, err
+		}
+		if choreName.Valid {
+			name := choreName.String
+			t.ChoreName = &name
 		}
 		if idempotencyKey.Valid {
 			k := idempotencyKey.String

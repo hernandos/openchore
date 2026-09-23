@@ -1,6 +1,7 @@
 {
   "admin": {
     "activityTab": {
+      "chore": "Chore: {{name}}",
       "empty": "No activity yet",
       "eventCount_one": "{{count}} event",
       "eventCount_other": "{{count}} events",

@@ -787,6 +787,13 @@ select.input {
   color: var(--text-secondary);
 }
 
+.activityChore {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 0.15rem;
+}
+
 .activityNote {
   font-size: 0.75rem;
   color: var(--text-secondary);
