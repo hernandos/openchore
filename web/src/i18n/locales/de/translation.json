@@ -2,6 +2,7 @@
   "admin": {
     "activityTab": {
       "chore": "Aufgabe: {{name}}",
+      "reward": "Belohnung: {{name}}",
       "empty": "Noch keine Aktivitäten",
       "eventCount_one": "{{count}} Ereignis",
       "eventCount_other": "{{count}} Ereignisse",

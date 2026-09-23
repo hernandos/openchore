@@ -977,11 +977,13 @@ func (s *Store) GetAllPointBalances(ctx context.Context) ([]PointBalanceRow, err
 
 func (s *Store) ListPointTransactions(ctx context.Context, userID int64, limit int) ([]model.PointTransaction, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT pt.id, pt.user_id, pt.amount, pt.reason, pt.reference_id, c.title, pt.note, pt.idempotency_key, pt.created_at
+		`SELECT pt.id, pt.user_id, pt.amount, pt.reason, pt.reference_id, c.title, rw.name, pt.note, pt.idempotency_key, pt.created_at
 		 FROM point_transactions pt
-		 LEFT JOIN chore_completions cc ON cc.id = pt.reference_id
+		 LEFT JOIN chore_completions cc ON pt.reason IN ('chore_complete', 'chore_uncomplete', 'expiry_penalty') AND cc.id = pt.reference_id
 		 LEFT JOIN chore_schedules cs ON cs.id = CASE WHEN pt.reason = 'missed_chore' THEN pt.reference_id ELSE cc.chore_schedule_id END
 		 LEFT JOIN chores c ON c.id = cs.chore_id
+		 LEFT JOIN reward_redemptions rr ON pt.reason = 'reward_redeem' AND rr.id = pt.reference_id
+		 LEFT JOIN rewards rw ON rw.id = rr.reward_id
 		 WHERE pt.user_id = ? ORDER BY pt.id DESC LIMIT ?`, userID, limit)
 	if err != nil {
 		return nil, err
@@ -991,13 +993,18 @@ func (s *Store) ListPointTransactions(ctx context.Context, userID int64, limit i
 	for rows.Next() {
 		var t model.PointTransaction
 		var choreName sql.NullString
+		var rewardName sql.NullString
 		var idempotencyKey sql.NullString
-		if err := rows.Scan(&t.ID, &t.UserID, &t.Amount, &t.Reason, &t.ReferenceID, &choreName, &t.Note, &idempotencyKey, &t.CreatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Amount, &t.Reason, &t.ReferenceID, &choreName, &rewardName, &t.Note, &idempotencyKey, &t.CreatedAt); err != nil {
 			return nil, err
 		}
 		if choreName.Valid {
 			name := choreName.String
 			t.ChoreName = &name
+		}
+		if rewardName.Valid {
+			name := rewardName.String
+			t.RewardName = &name
 		}
 		if idempotencyKey.Valid {
 			k := idempotencyKey.String

@@ -144,6 +144,7 @@ type PointTransaction struct {
 	Reason         string    `json:"reason"`
 	ReferenceID    *int64    `json:"reference_id,omitempty"`
 	ChoreName      *string   `json:"chore_name,omitempty"`
+	RewardName     *string   `json:"reward_name,omitempty"`
 	Note           string    `json:"note,omitempty"`
 	IdempotencyKey *string   `json:"idempotency_key,omitempty"`
 	CreatedAt      time.Time `json:"created_at"`
