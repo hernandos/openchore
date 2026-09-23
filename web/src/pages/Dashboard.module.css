@@ -1761,3 +1761,76 @@
     padding: 1rem;
   }
 }
+
+/* =========================================
+   Big icons for small kids
+   ========================================= */
+
+.card {
+  background-color: #1e293b;
+  border-radius: 1rem;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  width: 130px;
+  min-height: 150px;
+}
+
+.card:hover:not(:disabled) {
+  transform: scale(1.05);
+  background-color: #334155;
+}
+
+.card:disabled {
+  cursor: not-allowed;
+}
+
+.choreCardCompleted {
+  border-color: #4ade80;
+  background-color: rgba(74, 222, 128, 0.05);
+}
+
+.avatarWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 0.75rem;
+  border-radius: 50%;
+  background-color: #0f172a; 
+}
+
+.placeholder {
+  color: #94a3b8;
+}
+
+.lockBadge {
+  position: absolute;
+  bottom: -4px;
+  right: -8px;
+  background-color: #fbbf24;
+  color: #000;
+  border-radius: 12px;
+  padding: 2px 6px;
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.name {
+  color: #f8fafc;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
+}

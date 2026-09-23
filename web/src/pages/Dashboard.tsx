@@ -175,6 +175,7 @@ export const Dashboard: React.FC = () => {
   });
   const [view, setView] = useState<'daily' | 'weekly' | 'rewards'>('daily');
   const [chores, setChores] = useState<ScheduledChore[]>([]);
+  const [choreViewMode, setChoreViewMode] = useState<'list' | 'grid'>('list');
   const [streakData, setStreakData] = useState<UserStreakData | null>(null);
   const [pointsData, setPointsData] = useState<PointsData | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
@@ -860,18 +861,29 @@ export const Dashboard: React.FC = () => {
                 past && styles.timePeriodPast
               )}
             >
-              <div className={styles.timePeriodHeader}>
-                <span className={styles.timePeriodEmoji}>{period.emoji}</span>
-                <span className={styles.timePeriodLabel}>{period.label}</span>
-                <span className={styles.timePeriodCount}>
-                  {completedInPeriod}/{totalInPeriod}
-                </span>
+              <div className={styles.timePeriodHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span className={styles.timePeriodEmoji}>{period.emoji}</span>
+                  <span className={styles.timePeriodLabel}>{period.label}</span>
+                  <span className={styles.timePeriodCount}>
+                    {completedInPeriod}/{totalInPeriod}
+                  </span>
+                </div>
+                {/* Botón para alternar la vista */}
+                <button 
+                  onClick={() => setChoreViewMode(prev => prev === 'list' ? 'grid' : 'list')}
+                  className={styles.themeBtn} // Reutilizando un estilo existente de botón sutil
+                  title="Cambiar Vista"
+                >
+                  {choreViewMode === 'list' ? <LayoutDashboard size={16} /> : <CircleCheck size={16} />}
+                </button>
               </div>
 
               <div className={styles.timePeriodBody}>
                 {categoryGroups.map(group => (
                   <div key={group.category} className={styles.categoryGroup}>
-                    <div className={styles.categoryHeader}>
+           <div className={styles.categoryHeader}>
+                      {/* ... código del header de la categoría (se mantiene igual) ... */}
                       {(() => {
                         const IconComp = CATEGORY_ICON_MAP[config.categoryIcons[group.category]];
                         return IconComp
@@ -883,7 +895,53 @@ export const Dashboard: React.FC = () => {
                         {group.chores.filter(c => c.completed).length}/{group.chores.length}
                       </span>
                     </div>
-                    {group.chores.map(chore => renderChoreCard(chore))}
+                    {/* Lógica de Renderizado Condicional */}
+                    {choreViewMode === 'list' ? (
+                      // VISTA ORIGINAL EN LISTA
+                      group.chores.map(chore => renderChoreCard(chore))
+                    ) : (
+                      // NUEVA VISTA EN CUADRÍCULA (TIPO LOGIN)
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', padding: '1rem', justifyContent: 'center' }}>
+                        {group.chores.map(chore => {
+                          const isToday = chore.date === todayStr;
+                          const isLocked = !chore.available && !chore.completed;
+                          const canToggle = isToday && !isLocked && !togglingIds.has(chore.schedule_id);
+
+                          return (
+                            <button 
+                              key={`${chore.schedule_id}-${chore.date}`} 
+                              className={clsx(styles.card, chore.completed && styles.choreCardCompleted)} 
+                              onClick={() => canToggle && handleToggleComplete(chore)}
+                              disabled={isLocked || togglingIds.has(chore.schedule_id)}
+                              style={{ opacity: isLocked ? 0.5 : 1, position: 'relative' }}
+                            >
+                              <div className={styles.avatarWrapper}>
+                                {/* Renderiza el icono de la tarea, un check verde si está completa, o un círculo por defecto */}
+                                {chore.icon ? (
+                                  <span style={{ fontSize: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80px' }}>
+                                    {chore.icon}
+                                  </span>
+                                ) : chore.completed ? (
+                                  <CheckCircle size={80} className={styles.placeholder} style={{ color: '#4ade80' }} />
+                                ) : (
+                                  <CircleCheck size={80} className={styles.placeholder} />
+                                )}
+                                
+                                {/* Badge reutilizado: Muestra el candado si está bloqueada, o los puntos si está disponible */}
+                                <div className={styles.lockBadge} style={!isLocked ? { backgroundColor: '#fbbf24', color: '#000', display: 'flex', alignItems: 'center', width: 'auto', padding: '0 6px', borderRadius: '12px' } : {}}>
+                                  {isLocked ? (
+                                    <Lock size={14} />
+                                  ) : (
+                                    <><Star size={10} style={{marginRight: '2px'}}/> {chore.points_value}</>
+                                  )}
+                                </div>
+                              </div>
+                              <span className={styles.name}>{chore.title}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}              
                   </div>
                 ))}
 
