@@ -915,12 +915,12 @@ export const Dashboard: React.FC = () => {
                           return (
                             <button 
                               key={`${chore.schedule_id}-${chore.date}`} 
-                              className={clsx(styles.card, chore.completed && styles.choreCardCompleted)} 
+                              className={clsx(styles.card, chore.completed && styles.gridChoreCompleted)} 
                               onClick={() => canToggle && handleToggleComplete(chore)}
-                              disabled={isLocked || togglingIds.has(chore.schedule_id)}
-                              style={{ opacity: isLocked ? 0.5 : 1, position: 'relative' }}
+                              disabled={isLocked || chore.completed || togglingIds.has(chore.schedule_id)}
+                              style={{ opacity: isLocked || chore.completed ? 0.5 : 1, position: 'relative' }}
                             >
-                              <div className={styles.avatarWrapper}>
+                              <div className={clsx(styles.avatarWrapper, chore.completed && styles.completedAvatarWrapper)}>
                                 {/* Renderiza el icono de la tarea, un check verde si está completa, o un círculo por defecto */}
                                 {chore.icon ? (
                                   <span style={{ fontSize: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80px' }}>
