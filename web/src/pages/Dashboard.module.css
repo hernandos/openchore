@@ -1809,6 +1809,24 @@
   min-height: 150px;
 }
 
+.kidsChoreGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 130px);
+  gap: 0.75rem;
+  padding: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: start;
+}
+
+.kidsChoreGrid .card {
+  width: 130px;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  justify-self: start;
+}
+
 .card:hover:not(:disabled) {
   transform: scale(1.05);
   background-color: #334155;

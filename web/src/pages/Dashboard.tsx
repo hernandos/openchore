@@ -906,7 +906,7 @@ export const Dashboard: React.FC = () => {
                       group.chores.map(chore => renderChoreCard(chore))
                     ) : (
                       // NUEVA VISTA EN CUADRÍCULA (TIPO LOGIN)
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', padding: '1rem', justifyContent: 'center' }}>
+                      <div className={styles.kidsChoreGrid}>
                         {group.chores.map(chore => {
                           const isToday = chore.date === todayStr;
                           const isLocked = !chore.available && !chore.completed;
@@ -1388,7 +1388,7 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className={clsx(styles.wrapper, view === 'weekly' && styles.wrapperWide)}>
+    <div className={clsx(styles.wrapper, (view === 'weekly' || (view === 'daily' && choreViewMode === 'grid')) && styles.wrapperWide)}>
       {toast && (
         <div className={styles.toast}>
           {toast}
