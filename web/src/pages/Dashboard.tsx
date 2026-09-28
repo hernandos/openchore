@@ -175,7 +175,7 @@ export const Dashboard: React.FC = () => {
   });
   const [view, setView] = useState<'daily' | 'weekly' | 'rewards'>('daily');
   const [chores, setChores] = useState<ScheduledChore[]>([]);
-  const [choreViewMode, setChoreViewMode] = useState<'list' | 'grid'>('list');
+  const [choreViewMode, setChoreViewMode] = useState<'list' | 'grid'>('grid');
   const [streakData, setStreakData] = useState<UserStreakData | null>(null);
   const [pointsData, setPointsData] = useState<PointsData | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
