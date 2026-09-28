@@ -23,7 +23,8 @@
 }
 
 .wrapperWide {
-  max-width: 1200px;
+  width: 96vw;
+  max-width: none;
 }
 
 /* --- Toast --- */
