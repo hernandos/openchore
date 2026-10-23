@@ -874,11 +874,11 @@ export const Dashboard: React.FC = () => {
                     {completedInPeriod}/{totalInPeriod}
                   </span>
                 </div>
-                {/* Botón para alternar la vista */}
+                {/* Toggle button for the view mode */}
                 <button 
                   onClick={() => setChoreViewMode(prev => prev === 'list' ? 'grid' : 'list')}
-                  className={styles.themeBtn} // Reutilizando un estilo existente de botón sutil
-                  title="Cambiar Vista"
+                  className={styles.themeBtn} // Reusing an existing subtle button style
+                  title="Change view"
                 >
                   {choreViewMode === 'list' ? <LayoutDashboard size={16} /> : <CircleCheck size={16} />}
                 </button>
@@ -888,7 +888,7 @@ export const Dashboard: React.FC = () => {
                 {categoryGroups.map(group => (
                   <div key={group.category} className={styles.categoryGroup}>
            <div className={styles.categoryHeader}>
-                      {/* ... código del header de la categoría (se mantiene igual) ... */}
+                      {/* ... category header markup remains unchanged ... */}
                       {(() => {
                         const IconComp = CATEGORY_ICON_MAP[config.categoryIcons[group.category]];
                         return IconComp
@@ -900,12 +900,12 @@ export const Dashboard: React.FC = () => {
                         {group.chores.filter(c => c.completed).length}/{group.chores.length}
                       </span>
                     </div>
-                    {/* Lógica de Renderizado Condicional */}
+                    {/* Conditional render logic */}
                     {choreViewMode === 'list' ? (
-                      // VISTA ORIGINAL EN LISTA
+                      // Original list view
                       group.chores.map(chore => renderChoreCard(chore))
                     ) : (
-                      // NUEVA VISTA EN CUADRÍCULA (TIPO LOGIN)
+                      // New grid view (login-card style)
                       <div className={styles.kidsChoreGrid}>
                         {group.chores.map(chore => {
                           const isToday = chore.date === todayStr;
@@ -921,7 +921,7 @@ export const Dashboard: React.FC = () => {
                               style={{ opacity: isLocked || chore.completed ? 0.5 : 1, position: 'relative' }}
                             >
                               <div className={clsx(styles.avatarWrapper, chore.completed && styles.completedAvatarWrapper)}>
-                                {/* Renderiza el icono de la tarea, un check verde si está completa, o un círculo por defecto */}
+                                {/* Render the task icon, a green check if complete, or a default circle */}
                                 {chore.icon ? (
                                   <span style={{ fontSize: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80px' }}>
                                     {chore.icon}
@@ -932,7 +932,7 @@ export const Dashboard: React.FC = () => {
                                   <CircleCheck size={80} className={styles.placeholder} />
                                 )}
                                 
-                                {/* Badge reutilizado: Muestra el candado si está bloqueada, o los puntos si está disponible */}
+                                {/* Reused badge: shows the lock when blocked or the points when available */}
                                 <div className={styles.lockBadge} style={!isLocked ? { backgroundColor: '#fbbf24', color: '#000', display: 'flex', alignItems: 'center', width: 'auto', padding: '0 6px', borderRadius: '12px' } : {}}>
                                   {isLocked ? (
                                     <Lock size={14} />
