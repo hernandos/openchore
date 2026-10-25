@@ -112,6 +112,12 @@ Around it sit the other levers:
 <td align="center"><b>Week</b> — what's done, what's locked, what's coming</td>
 <td align="center"><b>Admin</b> — every kid's day at a glance</td>
 </tr>
+<tr>
+<td colspan="2"><img src="docs/screenshots/GridView.png" alt="Daily chore dashboard in grid view"></td>
+</tr>
+<tr>
+<td colspan="2" align="center"><b>Grid view</b> — chores displayed as tappable cards with icons and point values</td>
+</tr>
 </table>
 
 ## Features
@@ -176,6 +182,26 @@ Around it sit the other levers:
 
 </td></tr>
 </table>
+
+## Changes on this fork
+
+Compared with `main`, this branch adds reward-management and family-goal updates:
+
+### Reward media and links
+- Rewards can include `reward_url` and `image_url` metadata.
+- The admin rewards form lets parents add retailer links and item images, and the backend persists these fields when rewards are created or updated.
+
+### Redemption status tracking
+- Redemption history is surfaced in the UI with clearer status handling.
+
+### Better transaction context
+- Point transactions can include `chore_name` and `reward_name` context.
+- Activity and history views can show the related chore or redeemed reward.
+
+### Dashboard and admin refinements
+- The dashboard offers grid and list chore views with a more explicit task-card presentation.
+- The admin rewards tab includes assignment, stock, and shareability controls.
+- Ambient dashboard styling has been simplified for clearer layouts.
 
 ## Configuration
 

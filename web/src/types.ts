@@ -247,6 +247,8 @@ export interface PointTransaction {
   amount: number;
   reason: 'chore_complete' | 'chore_uncomplete' | 'reward_redeem' | 'streak_bonus' | 'admin_adjust' | 'expiry_penalty' | 'points_decay' | 'missed_chore' | 'commit_to_goal' | 'goal_break';
   reference_id?: number;
+  chore_name?: string;
+  reward_name?: string;
   note?: string;
   created_at: string;
 }
@@ -292,6 +294,8 @@ export interface Reward {
   name: string;
   description: string;
   icon?: string;
+  reward_url?: string;
+  image_url?: string;
   cost: number;
   effective_cost: number;
   stock?: number;
@@ -403,9 +407,12 @@ export interface UserDecayConfig {
 
 export interface RedemptionHistory {
   id: number;
+  user_id?: number;
+  user_name?: string;
   reward_name: string;
   reward_icon: string;
   points_spent: number;
+  status: 'pending' | 'paid';
   created_at: string;
 }
 

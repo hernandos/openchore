@@ -142,6 +142,8 @@ func NewRouter(s *store.Store, dispatcher *webhook.Dispatcher) (*chi.Mux, *Chore
 				r.Put("/rewards/{id}/assignments", rewards.SetAssignments)
 				r.Delete("/rewards/{id}", rewards.Delete)
 				r.Delete("/redemptions/{redemptionID}", rewards.UndoRedemption)
+				r.Get("/redemptions", rewards.ListAllRedemptions)
+				r.Put("/redemptions/{redemptionID}/status", rewards.UpdateRedemptionStatus)
 
 				// Streak rewards management
 				r.Get("/admin/streak-rewards", streaks.ListRewards)

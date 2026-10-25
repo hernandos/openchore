@@ -23,7 +23,8 @@
 }
 
 .wrapperWide {
-  max-width: 1200px;
+  width: 96vw;
+  max-width: none;
 }
 
 /* --- Toast --- */
@@ -1493,6 +1494,34 @@
   border-radius: 12px;
 }
 
+.rewardImageLink {
+  display: block;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.rewardImage {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  display: block;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rewardImageLink:hover,
+.rewardImageLink:focus-visible {
+  z-index: 2;
+}
+
+.rewardImageLink:hover .rewardImage,
+.rewardImageLink:focus-visible .rewardImage {
+  transform: scale(2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
 .rewardInfo {
   flex: 1;
   min-width: 0;
@@ -1760,4 +1789,121 @@
   .wrapper {
     padding: 1rem;
   }
+}
+
+/* =========================================
+   Big icons for small kids
+   ========================================= */
+
+.card {
+  background-color: #1e293b;
+  border-radius: 1rem;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  width: 130px;
+  min-height: 150px;
+}
+
+.kidsChoreGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 130px);
+  gap: 0.75rem;
+  padding: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: start;
+}
+
+.kidsChoreGrid .card {
+  width: 130px;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  justify-self: start;
+}
+
+.card:hover:not(:disabled) {
+  transform: scale(1.05);
+  background-color: #334155;
+}
+
+.card:disabled {
+  cursor: not-allowed;
+}
+
+.gridChoreCompleted {
+  opacity: 0.5;
+  cursor: default;
+  border-color: #4ade80;
+  background-color: rgba(74, 222, 128, 0.05);
+}
+
+.gridChoreCompleted .name {
+  text-decoration: line-through;
+  text-decoration-color: var(--accent-green);
+}
+
+.choreCardCompleted {
+  border-color: #4ade80;
+  background-color: rgba(74, 222, 128, 0.05);
+}
+
+.avatarWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 0.75rem;
+  border-radius: 50%;
+  background-color: #0f172a; 
+}
+
+.completedAvatarWrapper::after {
+  content: '';
+  position: absolute;
+  left: 0.25rem;
+  right: 0.25rem;
+  top: 50%;
+  height: 3px;
+  border-radius: 3px;
+  background: #4ade80;
+  transform: rotate(-12deg);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.placeholder {
+  color: #94a3b8;
+}
+
+.lockBadge {
+  position: absolute;
+  bottom: -4px;
+  right: -8px;
+  background-color: #fbbf24;
+  color: #000;
+  border-radius: 12px;
+  padding: 2px 6px;
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.name {
+  color: #f8fafc;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
 }

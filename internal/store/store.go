@@ -732,7 +732,6 @@ func (s *Store) ReverseAutoContributeReversals(ctx context.Context, completionID
 	return err
 }
 
-
 func (s *Store) GetSchedule(ctx context.Context, id int64) (*model.ChoreSchedule, error) {
 	cs := &model.ChoreSchedule{}
 	err := s.db.QueryRowContext(ctx,
@@ -776,9 +775,9 @@ func (s *Store) GetCompletion(ctx context.Context, id int64) (*model.ChoreComple
 }
 
 type PendingCompletionRow struct {
-	ID             int64     `json:"id"`
-	ChoreTitle     string    `json:"chore_title"`
-	ChildName      string    `json:"child_name"`
+	ID         int64  `json:"id"`
+	ChoreTitle string `json:"chore_title"`
+	ChildName  string `json:"child_name"`
 	// AssignedUserID is the user_id the underlying schedule is assigned to
 	// (i.e. the kid the chore "belongs to"), which may differ from the user
 	// who clicked "complete" (see ChildName) in sibling/FCFS scenarios.
@@ -978,8 +977,14 @@ func (s *Store) GetAllPointBalances(ctx context.Context) ([]PointBalanceRow, err
 
 func (s *Store) ListPointTransactions(ctx context.Context, userID int64, limit int) ([]model.PointTransaction, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, user_id, amount, reason, reference_id, note, idempotency_key, created_at
-		 FROM point_transactions WHERE user_id = ? ORDER BY id DESC LIMIT ?`, userID, limit)
+		`SELECT pt.id, pt.user_id, pt.amount, pt.reason, pt.reference_id, c.title, rw.name, pt.note, pt.idempotency_key, pt.created_at
+		 FROM point_transactions pt
+		 LEFT JOIN chore_completions cc ON pt.reason IN ('chore_complete', 'chore_uncomplete', 'expiry_penalty') AND cc.id = pt.reference_id
+		 LEFT JOIN chore_schedules cs ON cs.id = CASE WHEN pt.reason = 'missed_chore' THEN pt.reference_id ELSE cc.chore_schedule_id END
+		 LEFT JOIN chores c ON c.id = cs.chore_id
+		 LEFT JOIN reward_redemptions rr ON pt.reason = 'reward_redeem' AND rr.id = pt.reference_id
+		 LEFT JOIN rewards rw ON rw.id = rr.reward_id
+		 WHERE pt.user_id = ? ORDER BY pt.id DESC LIMIT ?`, userID, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -987,9 +992,19 @@ func (s *Store) ListPointTransactions(ctx context.Context, userID int64, limit i
 	var txs []model.PointTransaction
 	for rows.Next() {
 		var t model.PointTransaction
+		var choreName sql.NullString
+		var rewardName sql.NullString
 		var idempotencyKey sql.NullString
-		if err := rows.Scan(&t.ID, &t.UserID, &t.Amount, &t.Reason, &t.ReferenceID, &t.Note, &idempotencyKey, &t.CreatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Amount, &t.Reason, &t.ReferenceID, &choreName, &rewardName, &t.Note, &idempotencyKey, &t.CreatedAt); err != nil {
 			return nil, err
+		}
+		if choreName.Valid {
+			name := choreName.String
+			t.ChoreName = &name
+		}
+		if rewardName.Valid {
+			name := rewardName.String
+			t.RewardName = &name
 		}
 		if idempotencyKey.Valid {
 			k := idempotencyKey.String
@@ -1011,9 +1026,9 @@ func (s *Store) AdminAdjustPoints(ctx context.Context, userID int64, amount int,
 
 func (s *Store) CreateReward(ctx context.Context, r *model.Reward) error {
 	res, err := s.db.ExecContext(ctx,
-		`INSERT INTO rewards (name, description, icon, cost, stock, active, shareable, created_by)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		r.Name, r.Description, r.Icon, r.Cost, r.Stock, r.Active, boolToInt(r.Shareable), r.CreatedBy)
+		`INSERT INTO rewards (name, description, icon, reward_url, image_url, cost, stock, active, shareable, created_by)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		r.Name, r.Description, r.Icon, r.RewardURL, r.ImageURL, r.Cost, r.Stock, r.Active, boolToInt(r.Shareable), r.CreatedBy)
 	if err != nil {
 		return err
 	}
@@ -1025,9 +1040,9 @@ func (s *Store) GetReward(ctx context.Context, id int64) (*model.Reward, error) 
 	r := &model.Reward{}
 	var active, shareable int
 	err := s.db.QueryRowContext(ctx,
-		`SELECT id, name, description, icon, cost, stock, active, shareable, created_by, created_at
+		`SELECT id, name, description, icon, reward_url, image_url, cost, stock, active, shareable, created_by, created_at
 		 FROM rewards WHERE id = ?`, id).
-		Scan(&r.ID, &r.Name, &r.Description, &r.Icon, &r.Cost, &r.Stock, &active, &shareable, &r.CreatedBy, &r.CreatedAt)
+		Scan(&r.ID, &r.Name, &r.Description, &r.Icon, &r.RewardURL, &r.ImageURL, &r.Cost, &r.Stock, &active, &shareable, &r.CreatedBy, &r.CreatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -1037,7 +1052,7 @@ func (s *Store) GetReward(ctx context.Context, id int64) (*model.Reward, error) 
 }
 
 func (s *Store) ListRewards(ctx context.Context, activeOnly bool) ([]model.Reward, error) {
-	q := `SELECT id, name, description, icon, cost, stock, active, shareable, created_by, created_at FROM rewards`
+	q := `SELECT id, name, description, icon, reward_url, image_url, cost, stock, active, shareable, created_by, created_at FROM rewards`
 	if activeOnly {
 		q += ` WHERE active = 1`
 	}
@@ -1051,7 +1066,7 @@ func (s *Store) ListRewards(ctx context.Context, activeOnly bool) ([]model.Rewar
 	for rows.Next() {
 		var r model.Reward
 		var active, shareable int
-		if err := rows.Scan(&r.ID, &r.Name, &r.Description, &r.Icon, &r.Cost, &r.Stock, &active, &shareable, &r.CreatedBy, &r.CreatedAt); err != nil {
+		if err := rows.Scan(&r.ID, &r.Name, &r.Description, &r.Icon, &r.RewardURL, &r.ImageURL, &r.Cost, &r.Stock, &active, &shareable, &r.CreatedBy, &r.CreatedAt); err != nil {
 			return nil, err
 		}
 		r.Active = active == 1
@@ -1067,7 +1082,7 @@ func (s *Store) ListRewards(ctx context.Context, activeOnly bool) ([]model.Rewar
 // If it has assignments, only assigned users see it, with per-user cost.
 func (s *Store) ListRewardsForUser(ctx context.Context, userID int64) ([]model.Reward, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT r.id, r.name, r.description, r.icon, r.cost, r.stock, r.shareable, r.created_by, r.created_at,
+		SELECT r.id, r.name, r.description, r.icon, r.reward_url, r.image_url, r.cost, r.stock, r.shareable, r.created_by, r.created_at,
 			ra.custom_cost
 		FROM rewards r
 		LEFT JOIN reward_assignments ra ON ra.reward_id = r.id AND ra.user_id = ?
@@ -1088,7 +1103,7 @@ func (s *Store) ListRewardsForUser(ctx context.Context, userID int64) ([]model.R
 		var r model.Reward
 		var shareable int
 		var customCost sql.NullInt64
-		if err := rows.Scan(&r.ID, &r.Name, &r.Description, &r.Icon, &r.Cost, &r.Stock, &shareable, &r.CreatedBy, &r.CreatedAt, &customCost); err != nil {
+		if err := rows.Scan(&r.ID, &r.Name, &r.Description, &r.Icon, &r.RewardURL, &r.ImageURL, &r.Cost, &r.Stock, &shareable, &r.CreatedBy, &r.CreatedAt, &customCost); err != nil {
 			return nil, err
 		}
 		r.Active = true
@@ -1165,12 +1180,12 @@ func (s *Store) SetRewardAssignments(ctx context.Context, rewardID int64, assign
 
 // UpdateReward applies admin edits and, when the shareable flag transitions,
 // keeps existing kid commitments coherent:
-//   * shareable false → true: any active personal commits on this reward
+//   - shareable false → true: any active personal commits on this reward
 //     migrate into a new shared pool so siblings end up in the same pool
 //     instead of disconnected personal silos. Each kid's saved amount is
 //     preserved (it's derived from ledger rows referencing the commitment
 //     row, which we don't touch).
-//   * shareable true → false: refuse if there's an active shared pool with
+//   - shareable true → false: refuse if there's an active shared pool with
 //     contributors — the admin must redeem or cancel it first. Otherwise
 //     untying the pool from the reward leaves a half-state nobody can fix.
 func (s *Store) UpdateReward(ctx context.Context, r *model.Reward) error {
@@ -1189,8 +1204,8 @@ func (s *Store) UpdateReward(ctx context.Context, r *model.Reward) error {
 	priorlyShareable := priorShareable == 1
 
 	if _, err := tx.ExecContext(ctx,
-		`UPDATE rewards SET name=?, description=?, icon=?, cost=?, stock=?, active=?, shareable=? WHERE id=?`,
-		r.Name, r.Description, r.Icon, r.Cost, r.Stock, boolToInt(r.Active), boolToInt(r.Shareable), r.ID); err != nil {
+		`UPDATE rewards SET name=?, description=?, icon=?, reward_url=?, image_url=?, cost=?, stock=?, active=?, shareable=? WHERE id=?`,
+		r.Name, r.Description, r.Icon, r.RewardURL, r.ImageURL, r.Cost, r.Stock, boolToInt(r.Active), boolToInt(r.Shareable), r.ID); err != nil {
 		return err
 	}
 
@@ -1429,6 +1444,7 @@ func (s *Store) RedeemReward(ctx context.Context, userID, rewardID int64) (*mode
 		RewardID:    rewardID,
 		UserID:      userID,
 		PointsSpent: cost,
+		Status:      "pending",
 	}, nil
 }
 
@@ -1551,6 +1567,7 @@ func (s *Store) redeemSharedPoolTx(ctx context.Context, tx *sql.Tx, userID, rewa
 				RewardID:    rewardID,
 				UserID:      userID,
 				PointsSpent: c.saved,
+				Status:      "pending",
 			}
 		}
 	}
@@ -1575,6 +1592,7 @@ func (s *Store) redeemSharedPoolTx(ctx context.Context, tx *sql.Tx, userID, rewa
 			RewardID:    rewardID,
 			UserID:      userID,
 			PointsSpent: 0,
+			Status:      "pending",
 		}
 	}
 	return callerRedemption, nil
@@ -2407,15 +2425,18 @@ func (s *Store) DeleteStreakReward(ctx context.Context, id int64) error {
 
 type RedemptionHistoryRow struct {
 	ID          int64     `json:"id"`
+	UserID      int64     `json:"user_id,omitempty"`
+	UserName    string    `json:"user_name,omitempty"`
 	RewardName  string    `json:"reward_name"`
 	RewardIcon  string    `json:"reward_icon"`
 	PointsSpent int       `json:"points_spent"`
+	Status      string    `json:"status"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 
 func (s *Store) ListRedemptionsForUser(ctx context.Context, userID int64, limit int) ([]RedemptionHistoryRow, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT rr.id, r.name, r.icon, rr.points_spent, rr.created_at
+		SELECT rr.id, r.name, r.icon, rr.points_spent, rr.status, rr.created_at
 		FROM reward_redemptions rr
 		JOIN rewards r ON r.id = rr.reward_id
 		WHERE rr.user_id = ?
@@ -2428,12 +2449,51 @@ func (s *Store) ListRedemptionsForUser(ctx context.Context, userID int64, limit 
 	var result []RedemptionHistoryRow
 	for rows.Next() {
 		var r RedemptionHistoryRow
-		if err := rows.Scan(&r.ID, &r.RewardName, &r.RewardIcon, &r.PointsSpent, &r.CreatedAt); err != nil {
+		if err := rows.Scan(&r.ID, &r.RewardName, &r.RewardIcon, &r.PointsSpent, &r.Status, &r.CreatedAt); err != nil {
 			return nil, err
 		}
 		result = append(result, r)
 	}
 	return result, rows.Err()
+}
+
+func (s *Store) ListAllRedemptions(ctx context.Context, limit int) ([]RedemptionHistoryRow, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT rr.id, rr.user_id, u.name, r.name, r.icon, rr.points_spent, rr.status, rr.created_at
+		FROM reward_redemptions rr
+		JOIN rewards r ON r.id = rr.reward_id
+		JOIN users u ON u.id = rr.user_id
+		ORDER BY rr.created_at DESC
+		LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []RedemptionHistoryRow
+	for rows.Next() {
+		var redemption RedemptionHistoryRow
+		if err := rows.Scan(&redemption.ID, &redemption.UserID, &redemption.UserName, &redemption.RewardName, &redemption.RewardIcon, &redemption.PointsSpent, &redemption.Status, &redemption.CreatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, redemption)
+	}
+	return result, rows.Err()
+}
+
+func (s *Store) UpdateRedemptionStatus(ctx context.Context, redemptionID int64, status string) error {
+	result, err := s.db.ExecContext(ctx,
+		`UPDATE reward_redemptions SET status = ? WHERE id = ?`, status, redemptionID)
+	if err != nil {
+		return err
+	}
+	updated, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if updated == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 func (s *Store) UndoRedemption(ctx context.Context, redemptionID int64) error {

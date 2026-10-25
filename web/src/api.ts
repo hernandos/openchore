@@ -237,6 +237,11 @@ export const api = {
       }),
     redeem: (id: number) => fetchWithAuth<RewardRedemption>(`/rewards/${id}/redeem`, { method: 'POST' }),
     listRedemptions: (userId: number) => fetchWithAuth<RedemptionHistory[]>(`/users/${userId}/redemptions`),
+    listAllRedemptions: () => fetchWithAuth<RedemptionHistory[]>('/redemptions'),
+    updateRedemptionStatus: (id: number, status: 'pending' | 'paid') => fetchWithAuth(`/redemptions/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    }),
     undoRedemption: (redemptionId: number) => fetchWithAuth(`/redemptions/${redemptionId}`, { method: 'DELETE' }),
   },
   commitments: {

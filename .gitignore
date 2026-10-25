@@ -41,3 +41,5 @@ internal/*/data/
 
 # Editor/Agent
 .claude/
+
+.idea/
