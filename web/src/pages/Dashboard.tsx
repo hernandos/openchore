@@ -5,17 +5,17 @@ import { useTheme } from '../ThemeContext';
 import { api, APIError } from '../api';
 import type { ScheduledChore, UserStreakData, PointsData, Reward, RedemptionHistory, Theme } from '../types';
 import styles from './Dashboard.module.css';
-import { CheckCircle, Clock, Calendar, Star, LogOut, LayoutDashboard, Lock, KeyRound, Flame, Trophy, Zap, Gift, ShoppingBag, Palette, ShieldCheck, CircleCheck, Sparkles, Swords, Scroll, Coins, Rocket, Orbit, Telescope, TreePine, Sprout, Leaf, X, Loader2, Volume2, VolumeX, Undo2, Camera, Copy, Users, Target, PiggyBank, Plus } from 'lucide-react';
+import { CheckCircle, Clock, Calendar, Star, LogOut, LayoutDashboard, Lock, KeyRound, Flame, Trophy, Zap, Gift, ShoppingBag, Palette, CircleCheck, Sparkles, X, Loader2, Volume2, VolumeX, Undo2, Camera, Copy, Users, Target, PiggyBank, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import confetti from 'canvas-confetti';
 import { localDateStr } from '../utils';
-import { getTimePeriod, groupChoresByTimePeriod, isTimePeriodActive, isTimePeriodPast } from '../timeGrouping';
-import type { TimePeriod } from '../timeGrouping';
+import { getTimePeriod } from '../timeGrouping';
 import { QRCodeSVG } from 'qrcode.react';
 import { useThemeSound } from '../hooks/useThemeSound';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import PinSettingsModal from '../components/PinPad/PinSettingsModal';
+import { DailyGridView, DailyListView } from '../components/DailyChoreViews';
 
 const QRCodeModal: React.FC<{
   chore: ScheduledChore;
@@ -143,22 +143,6 @@ const QRCodeModal: React.FC<{
       </div>
     </div>
   );
-};
-
-// Map icon string names from ThemeConfig to actual components
-const CATEGORY_ICON_MAP: Record<string, React.FC<{ size?: number }>> = {
-  'shield-check': ShieldCheck,
-  'circle-check': CircleCheck,
-  'sparkles': Sparkles,
-  'swords': Swords,
-  'scroll': Scroll,
-  'coins': Coins,
-  'rocket': Rocket,
-  'orbit': Orbit,
-  'telescope': Telescope,
-  'tree-pine': TreePine,
-  'sprout': Sprout,
-  'leaf': Leaf,
 };
 
 export const Dashboard: React.FC = () => {
@@ -841,130 +825,28 @@ export const Dashboard: React.FC = () => {
   };
 
   const renderDailyView = () => {
-    const allChores = chores;
-    const timePeriods = groupChoresByTimePeriod(allChores);
-
     return (
       <div className={styles.choreGrid}>
-        {timePeriods.map(period => {
-          const active = isTimePeriodActive(period.startHour, period.nextStartHour);
-          const past = isTimePeriodPast(period.nextStartHour);
-          const future = !active && !past;
-          const available = period.chores.filter(c => c.available || c.completed);
-          const upcoming = period.chores.filter(c => !c.available && !c.completed);
-          const categoryGroups = groupChoresByCategory(available);
-          const completedInPeriod = period.chores.filter(c => c.completed).length;
-          const totalInPeriod = period.chores.length;
-
-          return (
-            <div
-              key={period.key}
-              className={clsx(
-                styles.timePeriodSection,
-                active && styles.timePeriodActive,
-                future && styles.timePeriodFuture,
-                past && styles.timePeriodPast
-              )}
-            >
-              <div className={styles.timePeriodHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <span className={styles.timePeriodEmoji}>{period.emoji}</span>
-                  <span className={styles.timePeriodLabel}>{period.label}</span>
-                  <span className={styles.timePeriodCount}>
-                    {completedInPeriod}/{totalInPeriod}
-                  </span>
-                </div>
-                {/* Toggle button for the view mode */}
-                <button 
-                  onClick={() => setChoreViewMode(prev => prev === 'list' ? 'grid' : 'list')}
-                  className={styles.themeBtn} // Reusing an existing subtle button style
-                  title="Change view"
-                >
-                  {choreViewMode === 'list' ? <LayoutDashboard size={16} /> : <CircleCheck size={16} />}
-                </button>
-              </div>
-
-              <div className={styles.timePeriodBody}>
-                {categoryGroups.map(group => (
-                  <div key={group.category} className={styles.categoryGroup}>
-           <div className={styles.categoryHeader}>
-                      {/* ... category header markup remains unchanged ... */}
-                      {(() => {
-                        const IconComp = CATEGORY_ICON_MAP[config.categoryIcons[group.category]];
-                        return IconComp
-                          ? <span className={styles[`catIcon_${group.category}`]}><IconComp size={14} /></span>
-                          : <span className={clsx(styles.categoryDot, styles[`dot_${group.category}`])} />;
-                      })()}
-                      <span className={styles.categoryLabel}>{group.label}</span>
-                      <span className={styles.categoryCount}>
-                        {group.chores.filter(c => c.completed).length}/{group.chores.length}
-                      </span>
-                    </div>
-                    {/* Conditional render logic */}
-                    {choreViewMode === 'list' ? (
-                      // Original list view
-                      group.chores.map(chore => renderChoreCard(chore))
-                    ) : (
-                      // New grid view (login-card style)
-                      <div className={styles.kidsChoreGrid}>
-                        {group.chores.map(chore => {
-                          const isToday = chore.date === todayStr;
-                          const isLocked = !chore.available && !chore.completed;
-                          const canToggle = isToday && !isLocked && !togglingIds.has(chore.schedule_id);
-
-                          return (
-                            <button 
-                              key={`${chore.schedule_id}-${chore.date}`} 
-                              className={clsx(styles.card, chore.completed && styles.gridChoreCompleted)} 
-                              onClick={() => canToggle && handleToggleComplete(chore)}
-                              disabled={isLocked || chore.completed || togglingIds.has(chore.schedule_id)}
-                              style={{ opacity: isLocked || chore.completed ? 0.5 : 1, position: 'relative' }}
-                            >
-                              <div className={clsx(styles.avatarWrapper, chore.completed && styles.completedAvatarWrapper)}>
-                                {/* Render the task icon, a green check if complete, or a default circle */}
-                                {chore.icon ? (
-                                  <span style={{ fontSize: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80px' }}>
-                                    {chore.icon}
-                                  </span>
-                                ) : chore.completed ? (
-                                  <CheckCircle size={80} className={styles.placeholder} style={{ color: '#4ade80' }} />
-                                ) : (
-                                  <CircleCheck size={80} className={styles.placeholder} />
-                                )}
-                                
-                                {/* Reused badge: shows the lock when blocked or the points when available */}
-                                <div className={styles.lockBadge} style={!isLocked ? { backgroundColor: '#fbbf24', color: '#000', display: 'flex', alignItems: 'center', width: 'auto', padding: '0 6px', borderRadius: '12px' } : {}}>
-                                  {isLocked ? (
-                                    <Lock size={14} />
-                                  ) : (
-                                    <><Star size={10} style={{marginRight: '2px'}}/> {chore.points_value}</>
-                                  )}
-                                </div>
-                              </div>
-                              <span className={styles.name}>{chore.title}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}              
-                  </div>
-                ))}
-
-                {upcoming.length > 0 && (
-                  <div className={styles.categoryGroup}>
-                    <div className={styles.sectionDivider}>
-                      <span className={styles.dividerLine} />
-                      <Clock size={14} className={styles.dividerIcon} />
-                      <span className={styles.dividerText}>{t('dashboard.daily.comingUpLater')}</span>
-                      <span className={styles.dividerLine} />
-                    </div>
-                    {upcoming.map(chore => renderChoreCard(chore))}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onClick={() => setChoreViewMode(prev => prev === 'list' ? 'grid' : 'list')}
+            className={styles.themeBtn}
+            title="Change view"
+          >
+            {choreViewMode === 'list' ? <LayoutDashboard size={16} /> : <CircleCheck size={16} />}
+          </button>
+        </div>
+        {choreViewMode === 'grid' ? (
+          <DailyGridView
+            chores={chores}
+            config={config}
+            today={todayStr}
+            togglingIds={togglingIds}
+            onToggleComplete={handleToggleComplete}
+          />
+        ) : (
+          <DailyListView chores={chores} config={config} renderChoreCard={chore => renderChoreCard(chore)} />
+        )}
       </div>
     );
   };
